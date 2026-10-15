@@ -35,6 +35,8 @@ stages:
                       kustomize edit set image ACR_PLACEHOLDER/fai-api=$(acrName).azurecr.io/$(imageName):$(tag)
                       sed -i "s|AZURE_OPENAI_ENDPOINT=REPLACE_ME|AZURE_OPENAI_ENDPOINT=$(foundryEndpoint)|" kustomization.yaml
                       sed -i "s|AZURE_SEARCH_ENDPOINT=REPLACE_ME|AZURE_SEARCH_ENDPOINT=$(searchEndpoint)|" kustomization.yaml
+                      KUBELET_CLIENT_ID=$(az aks show -g $(rgName) -n $(aksName) --query identityProfile.kubeletidentity.clientId -o tsv)
+                      sed -i "s|AZURE_CLIENT_ID=REPLACE_ME|AZURE_CLIENT_ID=$KUBELET_CLIENT_ID|" kustomization.yaml
                       kubectl apply -k .
                       kubectl -n fai-${{ parameters.env }} rollout status deploy/fai-api --timeout=180s
                 - ${{ if eq(parameters.runEvals, true) }}:

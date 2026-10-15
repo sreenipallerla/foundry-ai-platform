@@ -10,6 +10,7 @@ configMapGenerator:
       - VECTOR_STORE=azure_search
       - AZURE_OPENAI_ENDPOINT=REPLACE_ME
       - AZURE_SEARCH_ENDPOINT=REPLACE_ME
+      - AZURE_CLIENT_ID=REPLACE_ME
 patches:
   - target: { kind: Deployment, name: fai-api }
     patch: |-
