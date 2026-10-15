@@ -33,12 +33,16 @@ stages:
                       kubectl create namespace fai-${{ parameters.env }} --dry-run=client -o yaml | kubectl apply -f -
                       cd k8s/overlays/${{ parameters.env }}
                       kustomize edit set image ACR_PLACEHOLDER/fai-api=$(acrName).azurecr.io/$(imageName):$(tag)
+                      kustomize edit set image ACR_PLACEHOLDER/fai-web=$(acrName).azurecr.io/fai-web:$(tag)
+                      sed -i "s|ALLOWED_CIDR|$(allowedCidr)|" ../../base/web.yaml
+                      kubectl -n fai-${{ parameters.env }} create secret generic fai-web-secrets --from-literal=APP_PASSCODE='$(appPasscode)' --dry-run=client -o yaml | kubectl apply -f -
                       sed -i "s|AZURE_OPENAI_ENDPOINT=REPLACE_ME|AZURE_OPENAI_ENDPOINT=$(foundryEndpoint)|" kustomization.yaml
                       sed -i "s|AZURE_SEARCH_ENDPOINT=REPLACE_ME|AZURE_SEARCH_ENDPOINT=$(searchEndpoint)|" kustomization.yaml
                       KUBELET_CLIENT_ID=$(az aks show -g $(rgName) -n $(aksName) --query identityProfile.kubeletidentity.clientId -o tsv)
                       sed -i "s|AZURE_CLIENT_ID=REPLACE_ME|AZURE_CLIENT_ID=$KUBELET_CLIENT_ID|" kustomization.yaml
                       kubectl apply -k .
                       kubectl -n fai-${{ parameters.env }} rollout status deploy/fai-api --timeout=180s
+                      kubectl -n fai-${{ parameters.env }} rollout status deploy/fai-web --timeout=180s
                 - ${{ if eq(parameters.runEvals, true) }}:
                   - task: AzureCLI@2
                     displayName: Eval gate (blocks promotion on failure)

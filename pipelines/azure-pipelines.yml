@@ -42,6 +42,7 @@ stages:
               scriptLocation: inlineScript
               inlineScript: |
                 az acr build -r $(acrName) -t $(imageName):$(tag) -f Dockerfile .
+                az acr build -r $(acrName) -t fai-web:$(tag) -f web/Dockerfile web/
 
   - template: templates/deploy-stage.yml
     parameters: { stage: Dev, env: dev, dependsOn: Build, runEvals: true }

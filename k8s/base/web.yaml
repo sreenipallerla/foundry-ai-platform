@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: fai-web }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: fai-web } }
+  template:
+    metadata: { labels: { app: fai-web } }
+    spec:
+      containers:
+        - name: web
+          image: ACR_PLACEHOLDER/fai-web:TAG_PLACEHOLDER
+          ports: [{ containerPort: 8501 }]
+          env:
+            - { name: API_URL, value: "http://fai-api" }
+            - name: APP_PASSCODE
+              valueFrom: { secretKeyRef: { name: fai-web-secrets, key: APP_PASSCODE } }
+          readinessProbe: { httpGet: { path: /_stcore/health, port: 8501 }, initialDelaySeconds: 5 }
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+          securityContext: { runAsNonRoot: true, allowPrivilegeEscalation: false }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: fai-web }
+spec:
+  type: LoadBalancer          # public IP. Only these source ranges may connect:
+  loadBalancerSourceRanges: ["ALLOWED_CIDR"]
+  selector: { app: fai-web }
+  ports: [{ port: 80, targetPort: 8501 }]
