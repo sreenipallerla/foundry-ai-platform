@@ -1,0 +1,17 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.7
+python-dotenv>=1.0
+openai>=1.50
+langchain>=0.3
+langchain-core>=0.3
+langchain-openai>=0.2
+langchain-community>=0.3
+langchain-ollama>=0.2
+langgraph>=0.2
+langfuse>=3
+chromadb>=0.5
+azure-search-documents>=11.5
+azure-identity>=1.17
+tiktoken>=0.7
+pytest>=8

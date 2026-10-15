@@ -1,0 +1,51 @@
+parameters:
+  - name: stage
+  - name: env
+  - name: dependsOn
+  - name: runEvals
+    type: boolean
+    default: false
+
+stages:
+  - stage: ${{ parameters.stage }}
+    dependsOn: ${{ parameters.dependsOn }}
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+    variables:
+      - group: fai-${{ parameters.env }}      # holds acrName, aksName, rgName, endpoints
+    jobs:
+      - deployment: deploy
+        environment: fai-${{ parameters.env }}   # approvals and checks live on the Environment (QA, Prod)
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                - task: AzureCLI@2
+                  displayName: Deploy to AKS (${{ parameters.env }})
+                  inputs:
+                    azureSubscription: $(azureServiceConnection)
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      az aks get-credentials -g $(rgName) -n $(aksName) --overwrite-existing
+                      kubectl create namespace fai-${{ parameters.env }} --dry-run=client -o yaml | kubectl apply -f -
+                      cd k8s/overlays/${{ parameters.env }}
+                      kustomize edit set image ACR_PLACEHOLDER/fai-api=$(acrName).azurecr.io/$(imageName):$(tag)
+                      sed -i "s|AZURE_OPENAI_ENDPOINT=REPLACE_ME|AZURE_OPENAI_ENDPOINT=$(foundryEndpoint)|" kustomization.yaml
+                      sed -i "s|AZURE_SEARCH_ENDPOINT=REPLACE_ME|AZURE_SEARCH_ENDPOINT=$(searchEndpoint)|" kustomization.yaml
+                      kubectl apply -k .
+                      kubectl -n fai-${{ parameters.env }} rollout status deploy/fai-api --timeout=180s
+                - ${{ if eq(parameters.runEvals, true) }}:
+                  - task: AzureCLI@2
+                    displayName: Eval gate (blocks promotion on failure)
+                    inputs:
+                      azureSubscription: $(azureServiceConnection)
+                      scriptType: bash
+                      scriptLocation: inlineScript
+                      inlineScript: |
+                        pip install -r app/requirements.txt
+                        cd app
+                        export APP_ENV=${{ parameters.env }} LLM_PROVIDER=azure VECTOR_STORE=azure_search
+                        export AZURE_OPENAI_ENDPOINT=$(foundryEndpoint) AZURE_SEARCH_ENDPOINT=$(searchEndpoint)
+                        python -c "from src.rag import ingest; print('chunks', ingest('../data/docs'))"
+                        python -m evals.run_evals

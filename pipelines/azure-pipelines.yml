@@ -1,0 +1,44 @@
+# Build once, promote the same image through Dev -> QA -> Prod.
+# One-time setup: see README step 8 (service connections, variable groups, environments with approvals).
+trigger:
+  branches: { include: [main] }
+pr:
+  branches: { include: [main] }
+
+pool: { vmImage: ubuntu-latest }
+
+variables:
+  - name: imageName
+    value: fai-api
+  - name: tag
+    value: $(Build.BuildId)
+
+stages:
+  - stage: Build
+    jobs:
+      - job: build_test
+        steps:
+          - task: UsePythonVersion@0
+            inputs: { versionSpec: '3.12' }
+          - script: |
+              pip install -r app/requirements.txt
+              cd app && python -m pytest -q
+            displayName: Unit tests
+          - task: AzureCLI@2
+            displayName: Build and push image (ACR)
+            condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az acr build -r $(acrName) -t $(imageName):$(tag) -f Dockerfile .
+
+  - template: templates/deploy-stage.yml
+    parameters: { stage: Dev, env: dev, dependsOn: Build, runEvals: true }
+
+  - template: templates/deploy-stage.yml
+    parameters: { stage: QA, env: qa, dependsOn: Dev, runEvals: true }
+
+  - template: templates/deploy-stage.yml
+    parameters: { stage: Prod, env: prod, dependsOn: QA, runEvals: false }

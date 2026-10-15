@@ -1,0 +1,5 @@
+{"id":"q1","question":"What is the maximum single-borrower exposure without committee approval?","must_contain":["3 percent"],"expected_source":"lending-policy.md"}
+{"id":"q2","question":"How soon must covenant breaches be reported?","must_contain":["2 business days"],"expected_source":"lending-policy.md"}
+{"id":"q3","question":"How often is sanctions screening repeated?","must_contain":["12 months"],"expected_source":"kyc-procedure.md"}
+{"id":"q4","question":"What ownership threshold needs an ownership chart?","must_contain":["25 percent"],"expected_source":"kyc-procedure.md"}
+{"id":"q5","question":"What is the capital of Mars?","must_contain":["do not know"],"expected_source":null}

@@ -1,0 +1,7 @@
+.env
+.venv/
+.chroma/
+__pycache__/
+*.pyc
+app/finetune/train.jsonl
+app/finetune/validation.jsonl

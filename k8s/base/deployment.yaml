@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: fai-api }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: fai-api } }
+  template:
+    metadata: { labels: { app: fai-api } }
+    spec:
+      containers:
+        - name: api
+          image: ACR_PLACEHOLDER/fai-api:TAG_PLACEHOLDER
+          ports: [{ containerPort: 8000 }]
+          envFrom:
+            - configMapRef: { name: fai-config }
+            - secretRef: { name: fai-secrets, optional: true }
+          readinessProbe: { httpGet: { path: /health, port: 8000 }, initialDelaySeconds: 10 }
+          livenessProbe: { httpGet: { path: /health, port: 8000 }, initialDelaySeconds: 20 }
+          resources:
+            requests: { cpu: 250m, memory: 512Mi }
+            limits: { cpu: "1", memory: 1Gi }
+          securityContext: { runAsNonRoot: true, allowPrivilegeEscalation: false }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: fai-api }
+spec:
+  selector: { app: fai-api }
+  ports: [{ port: 80, targetPort: 8000 }]

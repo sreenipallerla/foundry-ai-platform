@@ -1,0 +1,20 @@
+# Local sandbox: Ollama (free local models) + Langfuse (traces). Run: docker compose -f ollama/docker-compose.yml up -d
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports: ["11434:11434"]
+    volumes: ["ollama:/root/.ollama"]
+  langfuse-db:
+    image: postgres:16
+    environment: { POSTGRES_USER: lf, POSTGRES_PASSWORD: lf, POSTGRES_DB: lf }
+    volumes: ["lfdb:/var/lib/postgresql/data"]
+  langfuse:
+    image: langfuse/langfuse:2
+    depends_on: [langfuse-db]
+    ports: ["3000:3000"]
+    environment:
+      DATABASE_URL: postgresql://lf:lf@langfuse-db:5432/lf
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: change-me-locally
+      SALT: change-me-locally
+volumes: { ollama: {}, lfdb: {} }
