@@ -7,7 +7,14 @@ pr:
 
 pool: { vmImage: ubuntu-latest }
 
+parameters:
+  - name: deployQaProd
+    displayName: Include QA and Prod stages
+    type: boolean
+    default: false
+
 variables:
+  - group: fai-dev
   - name: serviceConnection
     value: sc-fai
   - name: imageName
@@ -39,8 +46,9 @@ stages:
   - template: templates/deploy-stage.yml
     parameters: { stage: Dev, env: dev, dependsOn: Build, runEvals: true }
 
-  - template: templates/deploy-stage.yml
-    parameters: { stage: QA, env: qa, dependsOn: Dev, runEvals: true }
+  - ${{ if eq(parameters.deployQaProd, true) }}:
+    - template: templates/deploy-stage.yml
+      parameters: { stage: QA, env: qa, dependsOn: Dev, runEvals: true }
 
-  - template: templates/deploy-stage.yml
-    parameters: { stage: Prod, env: prod, dependsOn: QA, runEvals: false }
+    - template: templates/deploy-stage.yml
+      parameters: { stage: Prod, env: prod, dependsOn: QA, runEvals: false }
