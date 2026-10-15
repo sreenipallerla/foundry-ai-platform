@@ -8,6 +8,8 @@ pr:
 pool: { vmImage: ubuntu-latest }
 
 variables:
+  - name: serviceConnection
+    value: sc-fai
   - name: imageName
     value: fai-api
   - name: tag
@@ -28,7 +30,7 @@ stages:
             displayName: Build and push image (ACR)
             condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
             inputs:
-              azureSubscription: $(azureServiceConnection)
+              azureSubscription: ${{ variables.serviceConnection }}
               scriptType: bash
               scriptLocation: inlineScript
               inlineScript: |

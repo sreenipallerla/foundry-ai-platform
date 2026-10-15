@@ -2,6 +2,8 @@ parameters:
   - name: stage
   - name: env
   - name: dependsOn
+  - name: serviceConnection
+    default: sc-fai
   - name: runEvals
     type: boolean
     default: false
@@ -23,7 +25,7 @@ stages:
                 - task: AzureCLI@2
                   displayName: Deploy to AKS (${{ parameters.env }})
                   inputs:
-                    azureSubscription: $(azureServiceConnection)
+                    azureSubscription: ${{ parameters.serviceConnection }}
                     scriptType: bash
                     scriptLocation: inlineScript
                     inlineScript: |
@@ -39,7 +41,7 @@ stages:
                   - task: AzureCLI@2
                     displayName: Eval gate (blocks promotion on failure)
                     inputs:
-                      azureSubscription: $(azureServiceConnection)
+                      azureSubscription: ${{ parameters.serviceConnection }}
                       scriptType: bash
                       scriptLocation: inlineScript
                       inlineScript: |
